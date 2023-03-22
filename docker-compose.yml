@@ -19,7 +19,7 @@ services:
   ms4jnacos:
     image: nacos/nacos-server:v1.4.3
     container_name: ms4jnacos
-    restart: always
+    restart: on-failure
     environment:
       - MODE=standalone
       - JVM_XMS=256m
@@ -35,20 +35,21 @@ services:
       - 9848:9848
       - 9849:9849
     depends_on:
-      - ms4jmysql
+      ms4jmysql:
+        condition: service_started
     hostname: nacos.mid
 
   ## redis 服务
-  ms4jredis:
-    image: redis:6.2
-    container_name: ms4jredis
-    restart: always
-    ports:
-      - 6379:6379
-    volumes:
-      - ./redis/data:/data
-      - ./redis/redis.conf:/etc/redis/redis.conf
-    hostname: redis.mid
+#  ms4jredis:
+#    image: redis:6.2
+#    container_name: ms4jredis
+#    restart: always
+#    ports:
+#      - 6379:6379
+#    volumes:
+#      - ./redis/data:/data
+#      - ./redis/redis.conf:/etc/redis/redis.conf
+#    hostname: redis.mid
 
   ## minio
 #  ms4jminio:
@@ -65,30 +66,28 @@ services:
 #      - MINIO_ROOT_USER=admin
 #      - MINIO_ROOT_PASSWORD=admin123456
 
-  namesrv:
-    image: apache/rocketmq:4.5.0
-    container_name: rmqnamesrv
-    ports:
-      - 9876:9876
-    volumes:
-      - ./rocketmq/namesrv/logs:/home/rocketmq/logs
-    command: sh mqnamesrv
-  broker:
-    image: apache/rocketmq:4.5.0
-    container_name: rmqbroker
-    ports:
-      - 10909:10909
-      - 10911:10911
-      - 10912:10912
-    volumes:
-      - ./rocketmq/broker/logs:/home/rocketmq/logs
-      - ./rocketmq/broker/store:/home/rocketmq/store
-      #- ./rocketmq/broker/conf/broker.conf:/home/rocketmq/rocketmq-4.5.0/conf/broker.conf
-    command: sh mqbroker -n namesrv:9876 -c ../conf/broker.conf
-    depends_on:
-      - namesrv
-
-
+#  namesrv:
+#    image: apache/rocketmq:4.5.0
+#    container_name: rmqnamesrv
+#    ports:
+#      - 9876:9876
+#    volumes:
+#      - ./rocketmq/namesrv/logs:/home/rocketmq/logs
+#    command: sh mqnamesrv
+#  broker:
+#    image: apache/rocketmq:4.5.0
+#    container_name: rmqbroker
+#    ports:
+#      - 10909:10909
+#      - 10911:10911
+#      - 10912:10912
+#    volumes:
+#      - ./rocketmq/broker/logs:/home/rocketmq/logs
+#      - ./rocketmq/broker/store:/home/rocketmq/store
+#      #- ./rocketmq/broker/conf/broker.conf:/home/rocketmq/rocketmq-4.5.0/conf/broker.conf
+#    command: sh mqbroker -n namesrv:9876 -c ../conf/broker.conf
+#    depends_on:
+#      - namesrv
 
 #  ms4jbase:
 #    depends_on:

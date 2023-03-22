@@ -1,4 +1,4 @@
-version: '2'
+version: '2.5'
 services:
   ## mysql 服务
   ms4jmysql:
@@ -7,6 +7,9 @@ services:
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      retries: 3
+      start_period: 30s
     ports:
       - 3306:3306
     volumes:

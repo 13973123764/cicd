@@ -4,14 +4,16 @@ services:
   ms4jmysql:
     image: mysql:5.7
     container_name: ms4jmysql
-    restart: always
+    restart: on-failure
     environment:
       - MYSQL_ROOT_PASSWORD=root
-    healthcheck:
-      retries: 3
-      start_period: 30s
     ports:
       - 3306:3306
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "-uroot", "-proot", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
@@ -39,20 +41,35 @@ services:
       - 9849:9849
     depends_on:
       ms4jmysql:
-        condition: service_started
+        condition: service_healthy
     hostname: nacos.mid
 
   ## redis 服务
-#  ms4jredis:
-#    image: redis:6.2
-#    container_name: ms4jredis
-#    restart: always
-#    ports:
-#      - 6379:6379
-#    volumes:
-#      - ./redis/data:/data
-#      - ./redis/redis.conf:/etc/redis/redis.conf
-#    hostname: redis.mid
+  ms4jredis:
+    image: redis:6.2
+    container_name: ms4jredis
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis/data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf
+    hostname: redis.mid
+
+  ## canal
+  ms4jcanal:
+    image: canal/canal-server:v1.1.6
+    container_name: ms4jcanal
+    restart: on-failure
+    ports:
+      - 11111:11111
+    volumes:
+      - ./canal/conf/example:/home/admin/canal-server/conf/example
+      - ./canal/conf/canal.properties:/home/admin/canal-server/conf/canal.properties
+      - ./canal/logs:/home/admin/canal-server/logs
+    depends_on:
+      ms4jmysql:
+        condition: service_healthy
 
   ## minio
 #  ms4jminio:
@@ -69,28 +86,7 @@ services:
 #      - MINIO_ROOT_USER=admin
 #      - MINIO_ROOT_PASSWORD=admin123456
 
-#  namesrv:
-#    image: apache/rocketmq:4.5.0
-#    container_name: rmqnamesrv
-#    ports:
-#      - 9876:9876
-#    volumes:
-#      - ./rocketmq/namesrv/logs:/home/rocketmq/logs
-#    command: sh mqnamesrv
-#  broker:
-#    image: apache/rocketmq:4.5.0
-#    container_name: rmqbroker
-#    ports:
-#      - 10909:10909
-#      - 10911:10911
-#      - 10912:10912
-#    volumes:
-#      - ./rocketmq/broker/logs:/home/rocketmq/logs
-#      - ./rocketmq/broker/store:/home/rocketmq/store
-#      #- ./rocketmq/broker/conf/broker.conf:/home/rocketmq/rocketmq-4.5.0/conf/broker.conf
-#    command: sh mqbroker -n namesrv:9876 -c ../conf/broker.conf
-#    depends_on:
-#      - namesrv
+
 
 #  ms4jbase:
 #    depends_on:
@@ -115,3 +111,44 @@ services:
 #    restart: on-failure
 #    environment:
 #      - TZ=Asia/Shanghai
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+#  namesrv:
+#    image: apache/rocketmq:4.5.0
+#    container_name: rmqnamesrv
+#    ports:
+#      - 9876:9876
+#    volumes:
+#      - ./rocketmq/namesrv/logs:/home/rocketmq/logs
+#    command: sh mqnamesrv
+#  broker:
+#    image: apache/rocketmq:4.5.0
+#    container_name: rmqbroker
+#    ports:
+#      - 10909:10909
+#      - 10911:10911
+#      - 10912:10912
+#    volumes:
+#      - ./rocketmq/broker/logs:/home/rocketmq/logs
+#      - ./rocketmq/broker/store:/home/rocketmq/store
+#      - ./rocketmq/broker/conf/broker.conf:/home/rocketmq/rocketmq-4.5.0/conf/broker.conf
+#      - ./rocketmq/broker/conf/plain_acl.yml:/home/rocketmq/rocketmq-4.5.0/conf/plain_acl.yml
+#    command: sh mqbroker -n namesrv:9876 -c ../conf/broker.conf
+#    depends_on:
+#      - namesrv
